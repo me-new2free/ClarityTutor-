@@ -1,0 +1,2691 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClarityTutor - Master Any Concept Instantly</title>
+    <meta name="description"
+        content="The AI tutor that adapts to your level. Generate mind maps, flashcards, and quizzes instantly.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        :root {
+            /* Palette - Modern Dark Theme Base */
+            --bg-deep: #030014;
+            --bg-surface: #0f0b1f;
+            --bg-surface-elevated: #1a162e;
+            --bg-glass: rgba(15, 11, 31, 0.7);
+
+            --border-color: #2e2a4f;
+            --border-light: rgba(255, 255, 255, 0.1);
+
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            /* Accents */
+            --primary: #8b5cf6;
+            /* Violet-500 */
+            --primary-glow: rgba(139, 92, 246, 0.5);
+            --secondary: #6366f1;
+            /* Indigo-500 */
+            --accent-pink: #ec4899;
+            /* Pink-500 */
+            --accent-teal: #14b8a6;
+            /* Teal-500 */
+
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 8px;
+
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        [data-theme="light"] {
+            --bg-deep: #ffffff;
+            --bg-surface: #f8fafc;
+            --bg-surface-elevated: #ffffff;
+            --bg-glass: rgba(255, 255, 255, 0.8);
+
+            --border-color: #e2e8f0;
+            --border-light: rgba(0, 0, 0, 0.05);
+
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --primary-glow: rgba(139, 92, 246, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* --- Ambient Background --- */
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s infinite alternate;
+        }
+
+        .blob-1 {
+            width: 50vw;
+            height: 50vh;
+            background: var(--primary);
+            top: -10%;
+            left: -10%;
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            width: 40vw;
+            height: 40vh;
+            background: var(--secondary);
+            bottom: -10%;
+            right: -10%;
+            animation-delay: -5s;
+        }
+
+        .blob-3 {
+            width: 30vw;
+            height: 30vh;
+            background: var(--accent-pink);
+            top: 40%;
+            left: 40%;
+            opacity: 0.2;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) scale(1) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(50px, 30px) scale(1.1) rotate(10deg);
+            }
+        }
+
+        .parallax-element {
+            transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* --- Utilities --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 50%, #6366f1 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            font-weight: 800;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: var(--font-display);
+        }
+
+        /* --- Navbar --- */
+        .navbar {
+            position: sticky;
+            top: 20px;
+            margin: 0 auto;
+            width: 90%;
+            max-width: 1000px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-light);
+            border-radius: 100px;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            font-family: var(--font-display);
+        }
+
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .logo-icon img {
+            width: 85%;
+            height: 85%;
+            object-fit: contain;
+            mix-blend-mode: multiply;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .btn-premium {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--primary-glow);
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            padding-top: 80px;
+            padding-bottom: 60px;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            line-height: 1.1;
+            font-weight: 800;
+            margin-bottom: 24px;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 60px;
+        }
+
+        /* --- Magic Input Box --- */
+        .magic-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 8px;
+            position: relative;
+            box-shadow: 0 20px 80px -10px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .magic-container:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow), 0 20px 80px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-area {
+            width: 100%;
+            min-height: 120px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            padding: 24px;
+            resize: none;
+            font-family: inherit;
+        }
+
+        .input-area:focus {
+            outline: none;
+        }
+
+        .magic-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-light);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .pill-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-light);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pill-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+
+        .pill-btn.active {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .submit-fab {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        .submit-fab:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .submit-fab:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px var(--primary-glow);
+        }
+
+        /* --- Response Section --- */
+        .response-wrapper {
+            max-width: 800px;
+            margin: 40px auto;
+            display: none;
+            /* Hidden by default */
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .response-wrapper.active {
+            display: block;
+        }
+
+        .response-card {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .response-content h3 {
+            color: var(--text-primary);
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        .response-content ul {
+            padding-left: 20px;
+            margin-bottom: 16px;
+        }
+
+        .response-content li {
+            margin-bottom: 8px;
+        }
+
+        .response-content strong {
+            color: var(--text-primary);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Features Guide (Bento Style) --- */
+        .features-section {
+            padding: 80px 0;
+            margin-top: 40px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 300px);
+            gap: 24px;
+            padding: 0 20px;
+        }
+
+        .bento-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            transition: transform 0.3s ease;
+        }
+
+        .bento-card:hover {
+            border-color: var(--border-color);
+            transform: translateY(-5px);
+        }
+
+        .bento-card.wide {
+            grid-column: span 2;
+        }
+
+        .bento-card.tall {
+            grid-row: span 2;
+        }
+
+        .bento-icon {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            margin-bottom: auto;
+        }
+
+        .bento-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .bento-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .bento-bg-decor {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.1), transparent 60%);
+            z-index: 0;
+        }
+
+        .bento-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* How it works */
+        .process-section {
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .process-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-top: 50px;
+        }
+
+        .process-step {
+            position: relative;
+            padding: 40px 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-lg);
+            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        .process-step:hover {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.05);
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+            margin: 0 auto 24px;
+            box-shadow: 0 10px 20px var(--primary-glow);
+        }
+
+        .step-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .step-desc {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        /* Comparison Section */
+        .comparison-section {
+            padding: 80px 0;
+            background: radial-gradient(circle at center, rgba(139, 92, 246, 0.05) 0%, transparent 70%);
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 900px;
+            margin: 40px auto;
+        }
+
+        .comp-card {
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .comp-card.traditional {
+            background: rgba(255, 255, 255, 0.02);
+            opacity: 0.8;
+        }
+
+        .comp-card.ai {
+            background: var(--bg-surface-elevated);
+            border-color: var(--primary);
+            box-shadow: 0 10px 40px -10px var(--primary-glow);
+        }
+
+        .comp-tag {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+        }
+
+        .comp-price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 15px 0;
+            font-family: var(--font-display);
+        }
+
+        /* Quote Section */
+        .quote-section {
+            padding: 100px 0;
+            text-align: center;
+            background: linear-gradient(to bottom, transparent, rgba(139, 92, 246, 0.03), transparent);
+        }
+
+        .quote-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .quote-text {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .quote-author {
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* --- Footer --- */
+        footer {
+            border-top: 1px solid var(--border-light);
+            padding: 80px 0 40px;
+            text-align: center;
+            color: var(--text-muted);
+            background: #050508;
+        }
+
+        /* --- Specific Component Styles Needed for JS logic --- */
+        /* Flashcards */
+        .flashcards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .flashcard {
+            background: transparent;
+            height: 220px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flashcard.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front,
+        .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+        }
+
+        .flashcard-front {
+            background: var(--bg-surface-elevated);
+        }
+
+        .flashcard-back {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            transform: rotateY(180deg);
+            color: white;
+            border: none;
+        }
+
+        .flashcard-label {
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            opacity: 0.7;
+        }
+
+        .flashcard-question {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .flashcard-answer {
+            font-size: 1rem;
+        }
+
+        /* Mindmaps */
+        .mindmap-central {
+            background: var(--primary);
+            padding: 16px 32px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .mindmap-branch {
+            margin: 10px;
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        .mindmap-node {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-surface-elevated);
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        /* Updated Usage & Char Counter */
+        .char-counter {
+            text-align: right;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* Streak & Gamification */
+        .streak-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(255, 126, 0, 0.1);
+            border: 1px solid rgba(255, 126, 0, 0.2);
+            border-radius: 12px;
+            color: #ff7e00;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-right: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .streak-badge:hover {
+            background: rgba(255, 126, 0, 0.15);
+            transform: scale(1.05);
+        }
+
+        .streak-flame {
+            font-size: 1.1rem;
+            filter: drop-shadow(0 0 5px rgba(255, 126, 0, 0.4));
+            animation: pulse-flame 2s infinite alternate;
+        }
+
+        @keyframes pulse-flame {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        .goal-container {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            text-align: left;
+        }
+
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .goal-track {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .goal-fill {
+            height: 100%;
+            background: linear-gradient(to right, #ff7e00, #ffba00);
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 10px rgba(255, 126, 0, 0.3);
+        }
+
+        /* Mode Tabs */
+        .mode-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 14px;
+            border: 1px solid var(--border-light);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: var(--bg-surface-elevated);
+            color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* File Upload View */
+        .file-upload-zone {
+            display: block;
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .file-upload-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .file-upload-zone i {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .file-preview {
+            display: none;
+            padding: 15px;
+            background: var(--bg-surface-elevated);
+            border-radius: 12px;
+            margin-top: 10px;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .usage-container {
+            margin-top: 20px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .usage-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Creative Arena Styles */
+        .creative-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .creative-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .creative-card:hover {
+            background: rgba(139, 92, 246, 0.08);
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.15);
+        }
+
+        .creative-card.active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1));
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+        }
+
+        .creative-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .creative-card:hover .creative-icon {
+            transform: scale(1.1) rotate(5deg);
+            background: var(--primary);
+            color: white;
+        }
+
+        .creative-card h4 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .creative-card p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .usage-track {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .usage-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--accent-pink));
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .bento-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+
+            .bento-card {
+                grid-column: span 1 !important;
+                grid-row: span 1 !important;
+                min-height: 250px;
+            }
+
+            .magic-controls {
+                justify-content: center;
+            }
+        }
+
+        /* Chat Floating Widget */
+        .chat-widget-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+            z-index: 1000;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .chat-widget-btn:hover {
+            transform: scale(1.1) rotate(15deg);
+        }
+
+        .chat-container {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            height: 500px;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1));
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .msg {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .msg.ai {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+
+        .msg.user {
+            background: var(--primary);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .chat-input-area {
+            padding: 15px;
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        @media (max-width: 480px) {
+            .chat-container {
+                width: calc(100% - 40px);
+                right: 20px;
+                bottom: 90px;
+            }
+        }
+
+        /* AI Role Animations */
+        @keyframes burst {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.5;
+                filter: blur(10px);
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+                filter: blur(0px);
+            }
+
+            100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+                filter: blur(10px);
+            }
+        }
+
+        .ai-burst {
+            position: relative;
+            display: inline-block;
+            animation: burst 2s infinite ease-in-out;
+        }
+
+        .ai-burst::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 150%;
+            height: 150%;
+            background: var(--primary-glow);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            filter: blur(20px);
+            opacity: 0.3;
+        }
+
+        /* View Switching */
+        #landingView {
+            display: block;
+            transition: opacity 0.5s ease;
+        }
+
+        #appView {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .view-active {
+            opacity: 1 !important;
+            display: block !important;
+        }
+
+        /* Luxury Intro Page */
+        .luxury-hero {
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .luxury-badge {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid var(--primary-glow);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            backdrop-filter: blur(5px);
+        }
+
+        .luxury-title {
+            font-size: clamp(3rem, 8vw, 6rem);
+            line-height: 0.95;
+            letter-spacing: -0.05em;
+            margin-bottom: 32px;
+            font-weight: 800;
+        }
+
+        .luxury-subtitle {
+            font-size: 1.25rem;
+            max-width: 600px;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            line-height: 1.6;
+        }
+
+        .get-started-btn {
+            background: white;
+            color: black;
+            padding: 20px 48px;
+            border-radius: 100px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+        }
+
+        .get-started-btn:hover {
+            transform: scale(1.05);
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 15px 40px var(--primary-glow);
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            padding: 8px 16px;
+            border-radius: 100px;
+        }
+
+        .nav-link:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Scroll prompt */
+        .scroll-hint {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            opacity: 0.5;
+            font-size: 0.8rem;
+        }
+
+        .scroll-dot {
+            width: 2px;
+            height: 30px;
+            background: linear-gradient(to bottom, var(--primary), transparent);
+            animation: scroll-line 2s infinite;
+        }
+
+        @keyframes scroll-line {
+            0% {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+
+            50% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background Elements -->
+    <div class="ambient-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo" onclick="showView('landing')" style="cursor:pointer">
+            <div class="logo-icon"><img src="logo.jpg" alt="ClarityTutor Logo"></div>
+            <span>ClarityTutor</span>
+        </div>
+        <div class="nav-actions">
+            <!-- New Navigation Links -->
+            <a href="#" class="nav-link" onclick="showView('landing')">Home</a>
+            <a href="#" class="nav-link" onclick="showView('app')">Exploration</a>
+            <div class="streak-badge" title="Daily Learning Streak">
+                <i class="fas fa-fire streak-flame"></i>
+                <span id="streakCount">0</span>
+            </div>
+            <button class="nav-btn" id="historyBtn" title="History"><i class="fas fa-clock-rotate-left"></i></button>
+            <button class="nav-btn" id="themeToggle" title="Theme"><i class="fas fa-moon" id="themeIcon"></i></button>
+        </div>
+    </nav>
+
+    <!-- LANDING VIEW -->
+    <main id="landingView">
+        <section class="luxury-hero container">
+            <div class="luxury-badge reveal-item">Powered by Next-Gen AI</div>
+            <h1 class="luxury-title reveal-item">
+                <span class="char-animate">The</span> <span class="char-animate">Art</span> <span
+                    class="char-animate">of</span><br>
+                <span class="gradient-text char-animate">Understanding.</span>
+            </h1>
+            <p class="luxury-subtitle reveal-item">
+                Deconstruct complex concepts, visualize knowledge, and master any subject with the most sophisticated
+                AI tutoring experience ever crafted.
+            </p>
+            <button class="get-started-btn reveal-item magnetic-btn" onclick="showView('app')">
+                Enter the Arena <i class="fas fa-arrow-right"></i>
+            </button>
+
+            <div class="scroll-hint">
+                <span>The Experience</span>
+                <div class="scroll-dot"></div>
+            </div>
+        </section>
+
+        <!-- Existing Informational Sections (Process, Features, etc.) -->
+        <div class="info-sections">
+            <!-- How it Works Section -->
+            <section class="process-section container">
+                <div class="section-header">
+                    <h2 style="font-size: 2.5rem; margin-bottom: 12px;"><span class="gradient-text">How it Works</span>
+                    </h2>
+                    <p style="color:var(--text-secondary);">Your AI Learning Partner: Get started in minutes and
+                        revolutionize your learning journey.</p>
+                </div>
+                <div class="process-grid">
+                    <div class="process-step">
+                        <div class="step-number">01</div>
+                        <h3 class="step-title">Architect Focus</h3>
+                        <p class="step-desc">Establish your intellectual trajectory. Define your proficiency parameters
+                            and allow our neural engine to synthesize a bespoke knowledge architecture tailored to your
+                            cognitive profile.</p>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">02</div>
+                        <h3 class="step-title">Dynamic Discourse</h3>
+                        <p class="step-desc">Engage in high-fidelity dialectic with a sophisticated AI mentor. We
+                            deconstruct intricate theories into elegant, actionable insights with real-time semantic
+                            precision.</p>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">03</div>
+                        <h3 class="step-title">Strategic Synthesis</h3>
+                        <p class="step-desc">Transpose static documentation into dynamic intelligence. Leverage advanced
+                            cross-analysis to extract latent patterns and strategic summaries from any PDF or visual
+                            media.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features Bento Grid -->
+            <section class="features-section container">
+                <div class="section-header">
+                    <h2 style="font-size: 2.5rem; margin-bottom: 12px;">Powerful Learning Tools</h2>
+                    <p style="color:var(--text-secondary);">Everything you need to deconstruct complex topics.</p>
+                </div>
+                <div class="bento-grid">
+                    <div class="bento-card tall">
+                        <div class="bento-bg-decor"></div>
+                        <div class="bento-content">
+                            <div class="bento-icon"><i class="fas fa-brain"></i></div>
+                            <h3 class="bento-title">Adaptive AI Tutor</h3>
+                            <p class="bento-desc">Struggling with a concept? The AI adjusts its explanation style from
+                                "5-Year-Old" to "PhD Expert" instantly.</p>
+                        </div>
+                    </div>
+                    <div class="bento-card wide">
+                        <div class="bento-bg-decor"></div>
+                        <div class="bento-content">
+                            <div class="bento-icon"><i class="fas fa-diagram-project"></i></div>
+                            <h3 class="bento-title">Visual Mind Maps</h3>
+                            <p class="bento-desc">Turn linear text into structured visual hierarchies. Perfect for
+                                seeing the big picture of any topic.</p>
+                        </div>
+                    </div>
+                    <div class="bento-card">
+                        <div class="bento-bg-decor"></div>
+                        <div class="bento-content">
+                            <div class="bento-icon"><i class="fas fa-clone"></i></div>
+                            <h3 class="bento-title">Smart Flashcards</h3>
+                            <p class="bento-desc">Instantly generate study decks for active recall.</p>
+                        </div>
+                    </div>
+                    <div class="bento-card">
+                        <div class="bento-bg-decor"></div>
+                        <div class="bento-content">
+                            <div class="bento-icon"><i class="fas fa-check-circle"></i></div>
+                            <h3 class="bento-title">Mock Tests</h3>
+                            <p class="bento-desc">Test your knowledge with auto-generated quizzes.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Comparison Section -->
+            <section class="comparison-section container">
+                <div class="section-header">
+                    <h2 style="font-size: 2.5rem; margin-bottom: 12px;">Affordable & Accessible</h2>
+                    <p style="color:var(--text-secondary);">No need for costly tuition—high-quality education at your
+                        fingertips.</p>
+                </div>
+                <div class="comparison-grid">
+                    <div class="comp-card traditional">
+                        <div class="comp-tag">Traditional Tutoring</div>
+                        <div class="comp-price" style="color: var(--text-muted);">₹2000 - ₹5000</div>
+                        <p style="color: var(--text-muted);">per month / per topic</p>
+                    </div>
+                    <div class="comp-card ai">
+                        <div class="comp-tag" style="color: var(--primary);">ClarityTutor AI</div>
+                        <div class="comp-price" style="color: white">Free</div>
+                        <p style="color: var(--text-secondary);">Unlimited learning, 24/7 access</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI Assistant Widget -->
+            <div class="chat-widget-btn" id="chatBtn" title="AI Assistant">
+                <i class="fas fa-comment-dots"></i>
+            </div>
+            <div class="chat-container" id="chatContainer">
+                <div class="chat-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="logo-icon" style="width:24px; height:24px; background:#fff;"><img src="logo.jpg"
+                                alt="Logo"></div>
+                        <span style="font-weight:700; font-size:0.9rem;">Mira Concierge</span>
+                    </div>
+                    <button class="nav-btn" onclick="toggleChat()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="msg ai">👋 Hello! I'm **Mira**, your personal ClarityTutor Concierge. How can I help
+                        you?</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Ask anything about the app...">
+                    <button class="nav-btn" onclick="sendChat()" style="color:var(--primary);"><i
+                            class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- APP VIEW (The Tool) -->
+    <main id="appView" style="display: none;">
+        <section class="container" style="padding-top: 60px; padding-bottom: 40px;">
+            <div style="margin-bottom: 40px;">
+                <h2 style="font-size: 3rem; font-weight: 800; line-height: 1;">
+                    Clarity <span class="gradient-text">Studio.</span>
+                </h2>
+                <p style="color: var(--text-secondary); margin-top: 12px; font-size: 1.1rem;">Your intelligent
+                    environment for deep understanding.</p>
+            </div>
+
+            <!-- Main Interaction Component -->
+            <div class="magic-container">
+                <!-- Mode Switcher -->
+                <div class="mode-tabs">
+                    <button class="tab-btn active" onclick="switchMode('text')"><i class="fas fa-keyboard"></i> Text &
+                        Search</button>
+                    <button class="tab-btn" onclick="switchMode('file')"><i class="fas fa-file-arrow-up"></i> File &
+                        Media</button>
+                    <button class="tab-btn" onclick="switchMode('creative')"><i class="fas fa-wand-magic-sparkles"></i>
+                        Creative Arena</button>
+                </div>
+
+                <div id="textMode">
+                    <textarea id="questionInput" class="input-area" maxlength="1000"
+                        placeholder="What do you want to master today? (e.g. 'Explain Quantum Physics', 'History of Rome')"></textarea>
+                    <div id="charCount" class="char-counter">0/1000</div>
+                </div>
+
+                <div id="fileMode" style="display: none;">
+                    <div class="file-upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                        <p style="font-weight: 600; margin-bottom: 4px;">Upload Document or Image</p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">PDF, TXT, JPG, PNG (Max 5MB)</p>
+                        <input type="file" id="fileInput" hidden accept=".pdf,.txt,.jpg,.jpeg,.png">
+                    </div>
+                    <div id="filePreview" class="file-preview">
+                        <i class="fas fa-file-pdf" id="fileIcon" style="font-size: 1.5rem; color: var(--primary);"></i>
+                        <div style="flex: 1;">
+                            <div id="fileName" style="font-weight: 600; font-size: 0.9rem;">filename.pdf</div>
+                            <div id="fileSize" style="font-size: 0.75rem; color: var(--text-muted);">1.2 MB</div>
+                        </div>
+                        <button class="nav-btn" onclick="removeFile()"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+
+                <div id="creativeMode" style="display: none;">
+                    <div class="creative-grid">
+                        <div class="creative-card active" data-tool="counseling">
+                            <div class="creative-icon"><i class="fas fa-user-tie"></i></div>
+                            <h4>Career Counsel</h4>
+                            <p>Get professional path advice</p>
+                        </div>
+                        <div class="creative-card" data-tool="debate">
+                            <div class="creative-icon"><i class="fas fa-handshake-slash"></i></div>
+                            <h4>Debate Master</h4>
+                            <p>Sharpen your critical thinking</p>
+                        </div>
+                        <div class="creative-card" data-tool="brainstorm">
+                            <div class="creative-icon"><i class="fas fa-microchip"></i></div>
+                            <h4>Brainstormer 3000</h4>
+                            <p>Generate 50+ unique ideas</p>
+                        </div>
+                    </div>
+                    <textarea id="creativeInput" class="input-area" maxlength="1000"
+                        placeholder="Ask about a career path (e.g. 'How to become a pilot?')"></textarea>
+                </div>
+
+                <div class="usage-container" style="display: none;">
+                    <div class="usage-label">
+                        <span>Daily Prompt Usage</span>
+                        <span id="usageText">0 / ∞</span>
+                    </div>
+                    <div class="usage-track">
+                        <div id="usageBar" class="usage-fill" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <div class="goal-container">
+                    <div class="goal-header">
+                        <span>Daily Learning Goal</span>
+                        <span id="goalText" style="color: #ff7e00; font-weight: 700;">0 / 10 (0%)</span>
+                    </div>
+                    <div class="goal-track">
+                        <div id="goalBar" class="goal-fill"></div>
+                    </div>
+                </div>
+
+                <div class="magic-controls">
+                    <!-- Level Select -->
+                    <div class="control-group">
+                        <button class="pill-btn" data-level="child"><i class="fas fa-child"></i> 5-Year-Old</button>
+                        <button class="pill-btn active" data-level="student"><i class="fas fa-graduation-cap"></i>
+                            Student</button>
+                        <button class="pill-btn" data-level="expert"><i class="fas fa-brain"></i> Expert</button>
+                    </div>
+
+                    <!-- Output Select -->
+                    <div class="control-group">
+                        <button class="pill-btn active" data-output="explain" title="Explain"><i
+                                class="fas fa-lightbulb"></i> Explain</button>
+                        <button class="pill-btn" data-output="mindmap" title="Mind Map"><i
+                                class="fas fa-diagram-project"></i> Map</button>
+                        <button class="pill-btn" data-output="flashcards" title="Flashcards"><i
+                                class="fas fa-clone"></i>
+                            Cards</button>
+                        <button class="pill-btn" data-output="mocktest" title="Quiz"><i
+                                class="fas fa-clipboard-check"></i>
+                            Quiz</button>
+                        <button class="pill-btn" data-output="exam" data-mode="file" title="Exam Help"><i
+                                class="fas fa-file-signature"></i>
+                            Exam</button>
+                        <button class="pill-btn" data-output="summary" data-mode="file" title="Summarize"><i
+                                class="fas fa-compress-alt"></i>
+                            Summary</button>
+                        <button class="pill-btn" data-output="youtube" title="YouTube Summary"><i
+                                class="fab fa-youtube"></i>
+                            Video</button>
+                    </div>
+
+                    <button id="submitBtn" class="submit-fab">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Response Container -->
+        <section id="responseSection" class="response-wrapper container">
+            <div class="response-card">
+                <div class="response-header">
+                    <div>
+                        <span class="gradient-text" style="font-size:1.1rem; font-weight:700;"><i
+                                class="fas fa-sparkles"></i> AI Response</span>
+                        <span id="responseBadge"
+                            style="margin-left:12px; background:rgba(255,255,255,0.1); padding:4px 10px; border-radius:12px; font-size:0.8rem;">Student
+                            Level</span>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="nav-btn" onclick="copyResponse()" title="Copy"><i
+                                class="fas fa-copy"></i></button>
+                        <button class="nav-btn" onclick="clearResponse()" title="Close"><i
+                                class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                <div id="responseContent" class="response-content">
+                    <div class="loading" style="text-align:center; padding:40px;">
+                        <i class="fas fa-circle-notch fa-spin" style="font-size:2rem; color:var(--primary);"></i>
+                        <p style="margin-top:10px; opacity:0.7;">Thinking...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- History Container -->
+        <section id="historySection" class="container" style="display:none; margin: 20px auto; max-width:800px;">
+            <div
+                style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:16px; padding:20px;">
+                <h3 style="margin-bottom:16px;">Recent History</h3>
+                <div id="historyList"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer style="margin-top: 100px;">
+        <div class="container">
+            <div class="logo" style="justify-content:center; margin-bottom:20px; opacity:0.9;">
+                <div class="logo-icon" style="margin-right: 12px; width: 30px; height: 30px;"><img src="logo.jpg"
+                        alt="Logo"></div>
+                ClarityTutor
+            </div>
+            <p>&copy; 2026 ClarityTutor AI. Built for curious minds.</p>
+            <div style="margin-top:20px;">
+                <a href="#" onclick="showLegal()"
+                    style="color:var(--text-muted); text-decoration:none; margin:0 10px;">Legal</a>
+                <a href="#" style="color:var(--text-muted); text-decoration:none; margin:0 10px;">Privacy</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // View Switching
+        // High-End GSAP Animations
+        // High-End GSAP Animations
+        window.initLuxuryAnimations = function () {
+            // Check if GSAP is available
+            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+                console.error("GSAP or ScrollTrigger not loaded. Animations disabled.");
+                // Fallback: Ensure everything is visible
+                document.querySelectorAll('section, .reveal-item, .process-step, .bento-card, .comp-card').forEach(el => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'none';
+                    el.style.visibility = 'visible';
+                });
+                return;
+            }
+
+            gsap.registerPlugin(ScrollTrigger);
+
+            // 1. Instant reveal hero items (don't wait for scroll)
+            gsap.from(".luxury-hero .reveal-item", {
+                y: 30,
+                opacity: 0,
+                duration: 1.2,
+                stagger: 0.1,
+                ease: "power3.out",
+                clearProps: "all"
+            });
+
+            // 2. Continuous title float
+            gsap.to(".char-animate", {
+                y: -6,
+                duration: 2,
+                repeat: -1,
+                yoyo: true,
+                stagger: { each: 0.1, from: "center" },
+                ease: "sine.inOut"
+            });
+
+            // 3. Section Scroll Reveals
+            const sections = document.querySelectorAll('.info-sections section, section.container');
+            sections.forEach(sec => {
+                gsap.from(sec, {
+                    scrollTrigger: {
+                        trigger: sec,
+                        start: "top 92%", // Trigger earlier
+                        toggleActions: "play none none none",
+                        once: true
+                    },
+                    y: 30,
+                    opacity: 0,
+                    duration: 0.8,
+                    ease: "power2.out",
+                    clearProps: "all"
+                });
+            });
+
+            // 4. Item Stagger (Process cards, Bento, etc.)
+            const staggerTargets = [".process-step", ".bento-card", ".comp-card"];
+            staggerTargets.forEach(selector => {
+                const items = document.querySelectorAll(selector);
+                if (items.length) {
+                    gsap.from(items, {
+                        scrollTrigger: {
+                            trigger: items[0],
+                            start: "top 95%"
+                        },
+                        opacity: 0,
+                        y: 20,
+                        duration: 0.6,
+                        stagger: 0.1,
+                        ease: "power2.out",
+                        clearProps: "all"
+                    });
+                }
+            });
+
+            // 5. Magnetic Hover Fallback
+            document.querySelectorAll('.magnetic-btn').forEach(btn => {
+                btn.addEventListener('mousemove', (e) => {
+                    const r = btn.getBoundingClientRect();
+                    const x = (e.clientX - r.left - r.width / 2) * 0.2;
+                    const y = (e.clientY - r.top - r.height / 2) * 0.2;
+                    gsap.to(btn, { x, y, duration: 0.3 });
+                });
+                btn.addEventListener('mouseleave', () => {
+                    gsap.to(btn, { x: 0, y: 0, duration: 0.5, ease: "elastic.out(1, 0.3)" });
+                });
+            });
+
+            // 6. Ambient background motion
+            gsap.to(".blob-1", { x: "5%", duration: 20, repeat: -1, yoyo: true, ease: "sine.inOut" });
+            gsap.to(".blob-2", { x: "-5%", duration: 25, repeat: -1, yoyo: true, ease: "sine.inOut" });
+
+            // Critical: Refresh ScrollTrigger after init
+            ScrollTrigger.refresh();
+        };
+
+        window.addEventListener('load', () => {
+            initLuxuryAnimations();
+            // Fallback for immediate visibility just in case
+            setTimeout(() => {
+                ScrollTrigger.refresh();
+            }, 500);
+        });
+
+        window.showView = function (view) {
+            const landing = document.getElementById('landingView');
+            const app = document.getElementById('appView');
+            if (view === 'app') {
+                gsap.to(landing, {
+                    opacity: 0, duration: 0.5, onComplete: () => {
+                        landing.style.display = 'none';
+                        app.style.display = 'block';
+                        gsap.fromTo(app, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6 });
+                        window.scrollTo({ top: 0 });
+                    }
+                });
+            } else {
+                gsap.to(app, {
+                    opacity: 0, duration: 0.5, onComplete: () => {
+                        app.style.display = 'none';
+                        landing.style.display = 'block';
+                        gsap.fromTo(landing, { opacity: 0 }, { opacity: 1, duration: 0.6 });
+                        window.scrollTo({ top: 0 });
+                        ScrollTrigger.refresh();
+                    }
+                });
+            }
+        }
+
+        // PDF.js Setup
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // DOM Polyfills for existing JS structure
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('[data-level]').forEach(el => el.classList.add('level-btn'));
+            document.querySelectorAll('[data-output]').forEach(el => el.classList.add('output-btn'));
+            checkAndResetDailyUsage();
+            updateUsageUI();
+            updateStreak();
+        });
+
+        function checkAndResetDailyUsage() {
+            const today = new Date().toDateString();
+            const lastClearDate = localStorage.getItem('claritytutor_last_clear_date');
+            if (lastClearDate !== today) {
+                localStorage.setItem('claritytutor_usage', '0');
+                localStorage.setItem('claritytutor_last_clear_date', today);
+            }
+        }
+    </script>
+
+    <script>
+        // Configuration & Multi-API Rotation
+        const API_KEYS = [
+            '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',
+            // Add other keys here as provided by user
+        ];
+        let currentKeyIndex = 0;
+
+        const getApiKey = () => API_KEYS[currentKeyIndex % API_KEYS.length];
+        const rotateApiKey = () => { currentKeyIndex++; };
+
+        const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+        // Available free models
+        const FREE_MODELS = [
+            'google/gemma-3n-e2b-it:free',
+            'google/gemini-2.0-flash-exp:free',
+            'meta-llama/llama-3.3-70b-instruct:free',
+            'mistralai/mistral-small-24b-instruct:free',
+            'nvidia/nemotron-3-nano-30b-a3b:free',
+            'meta-llama/llama-3.2-3b-instruct:free',
+            'qwen/qwen-2-7b-instruct:free'
+        ];
+
+        // Premium Pro Models
+        const PRO_MODELS = [
+            'openai/gpt-oss-120b:free',
+            'deepseek/deepseek-r1-0528:free',
+            'qwen/qwen-2.5-vl-7b-instruct:free'
+        ];
+
+        const ALL_PRO_MODELS = [...PRO_MODELS, ...FREE_MODELS];
+        let currentModelIndex = 0;
+
+        // State
+        let isProUser = true; // All features are now free!
+        let selectedLevel = 'student';
+        let selectedOutput = 'explain';
+        let history = JSON.parse(localStorage.getItem('claritytutor_history') || '[]');
+        let currentResponse = '';
+        let lastQuestion = '';
+        let attachedImageBase64 = null;
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
+
+        // Level descriptions
+        const levelDescriptions = {
+            child: "a 5-year-old child, using very simple words, fun analogies, and short sentences",
+            student: "a high school student, using clear explanations with some technical terms explained",
+            college: "a college/university student, with detailed academic explanations and proper terminology",
+            expert: "an expert professional, with in-depth technical analysis, citations, and advanced concepts"
+        };
+
+        // Output type prompts
+        const outputPrompts = {
+            explain: (topic, level) => `Explain the following topic as if explaining to ${levelDescriptions[level]}:\n\n${topic}\n\nProvide a clear, structured explanation with examples where helpful.`,
+            viva: (topic, level) => `Create 5 viva voce (oral examination) questions about the following topic, suitable for ${levelDescriptions[level]}:\n\n${topic}\n\nFor each question, provide:\n1. The question\n2. Expected answer points\n3. Follow-up question\n\nFormat as a structured Q&A session.`,
+            mocktest: (topic, level) => `Create a 5-question multiple choice quiz about:\n\n${topic}\n\nDifficulty level: ${level === 'child' ? 'very easy' : level === 'student' ? 'moderate' : level === 'college' ? 'challenging' : 'advanced'}\n\nFor each question provide:\n- The question\n- 4 options (A, B, C, D)\n- The correct answer\n- Brief explanation\n\nFormat as JSON array with objects containing: "question", "options" (array of 4 strings), "correct" (index 0-3), "explanation"`,
+            mindmap: (topic, level) => `Create a hierarchical mind map structure about:\n\n${topic}\n\nLevel: ${level}\n\nReturn EXACTLY a JSON array of objects, where each object has:\n- "id" (unique string)\n- "parentId" (string, null for root)\n- "label" (text to show)\n- "content" (brief explanation)\n\nExample structure:\n[{"id": "root", "parentId": null, "label": "Main Topic", "content": "Central concept"}, {"id": "1", "parentId": "root", "label": "Branch 1", "content": "..."}]`,
+            flashcards: (topic, level) => `Create 8 flashcards about:\n\n${topic}\n\nDifficulty level: ${level === 'child' ? 'very simple' : level === 'student' ? 'basic' : level === 'college' ? 'intermediate' : 'advanced'}\n\nFormat as JSON array with objects containing: "front" (question or term), "back" (answer or definition)\n\nMake them concise and memorable.`,
+            youtube: (url, level) => `Summarize the YouTube video at the following URL:\n\n${url}\n\nTarget Audience: ${levelDescriptions[level]}\n\nReturn ONLY a JSON object with this exact structure:\n{\n  "title": "...",\n  "key_takeaways": ["...", "..."],\n  "detailed_summary": ["paragraph 1", "paragraph 2", "paragraph 3"],\n  "why_this_matters": "..."\n}`,
+            summary: (topic, level) => `Create a comprehensive summary of the following content for ${levelDescriptions[level]}:\n\n${topic}\n\nProvide:\n1. A high-level overview\n2. Key themes/concepts\n3. Detailed breakdown of main points\n4. Conclusion/Key takeaways.`,
+            exam: (topic, level) => `Analyze the following content to provide exam-focused help for ${levelDescriptions[level]}:\n\n${topic}\n\nProvide:\n1. Likely Exam Pattern (Question types, weightage based on content)\n2. Most Important Topics (High probability questions)\n3. Strategy Guide (How to study this efficiently)\n4. 3 Sample Practice Questions with Model Answer points.`,
+            counseling: (topic, level) => `You are a professional career counselor. Provide guidance on: ${topic}. Consider that I am at a ${levelDescriptions[level]}. Offer actionable steps, required skills, and market outlook.`,
+            news: (topic, level) => `Provide a structured summary of the latest news regarding ${topic || 'World Events'}. Explain it for ${levelDescriptions[level]}. Group by category and provide 'Why it matters'.`,
+            debate: (topic, level) => `I want to debate about: ${topic}. You are the Debate Master. Take the opposite stance of whatever I imply, or if I am neutral, pick the most controversial side. Challenge my logic, use evidence, and be a tough but fair opponent for someone at ${levelDescriptions[level]}.`,
+            brainstorm: (topic, level) => `Generate a massive brainstorming session for: ${topic}. Use creative frameworks like SCAMPER, First Principles, and Lateral Thinking. Provide at least 15-20 highly unique, categorized ideas suitable for ${levelDescriptions[level]}.`
+        };
+
+        // DOM Elements
+        const questionInput = document.getElementById('questionInput');
+        const charCount = document.getElementById('charCount');
+        const submitBtn = document.getElementById('submitBtn');
+        const responseSection = document.getElementById('responseSection');
+        const responseContent = document.getElementById('responseContent');
+        const responseBadge = document.getElementById('responseBadge');
+        const historySection = document.getElementById('historySection');
+        const historyList = document.getElementById('historyList');
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const historyBtn = document.getElementById('historyBtn');
+
+        // Event Listeners
+        questionInput.addEventListener('input', () => {
+            charCount.textContent = `${questionInput.value.length}/1000`;
+        });
+
+        // Use setTimeout to allow polyfill to run first
+        setTimeout(() => {
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedLevel = btn.dataset.level;
+                });
+            });
+
+            document.querySelectorAll('.output-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.output-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedOutput = btn.dataset.output;
+
+                    // Update placeholder for specialized modes
+                    if (selectedOutput === 'youtube') {
+                        questionInput.placeholder = "Paste YouTube Video Link here... (e.g. https://www.youtube.com/watch?v=...)";
+                    } else if (selectedOutput === 'exam') {
+                        questionInput.placeholder = "Describe your exam or paste syllabus here... (or upload files below)";
+                    } else if (selectedOutput === 'summary') {
+                        questionInput.placeholder = "Paste the text you want to summarize... (or upload files below)";
+                    } else {
+                        questionInput.placeholder = "What do you want to master today? (e.g. 'Explain Quantum Physics', 'History of Rome')";
+                    }
+                });
+            });
+        }, 100);
+
+        submitBtn.addEventListener('click', handleSubmit);
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Initialize Creative Arena tool switching
+        let selectedCreativeTool = 'counseling';
+        setTimeout(() => {
+            document.querySelectorAll('.creative-card').forEach(card => {
+                card.onclick = () => {
+                    document.querySelectorAll('.creative-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    selectedCreativeTool = card.dataset.tool;
+                    const inputs = {
+                        counseling: "Ask about a career path (e.g. 'How to become a pilot?')",
+                        news: "Topic for news (e.g. 'Global Economy' or just leave blank for general news)",
+                        debate: "What topic do you want to debate? (e.g. 'AI is dangerous', 'Social media is good')",
+                        brainstorm: "What do you need ideas for? (e.g. 'Startup ideas', 'Sci-fi book plot', 'Birthday gift')"
+                    };
+                    document.getElementById('creativeInput').placeholder = inputs[selectedCreativeTool];
+                };
+            });
+
+            // Add Enter Key Listeners
+            const submitOnEnter = (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                }
+            };
+            document.getElementById('questionInput').addEventListener('keydown', submitOnEnter);
+            document.getElementById('creativeInput').addEventListener('keydown', submitOnEnter);
+        }, 300);
+
+        historyBtn.addEventListener('click', () => {
+            historySection.style.display = historySection.style.display === 'none' ? 'block' : 'none';
+            renderHistory();
+        });
+
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            localStorage.setItem('theme', isDark ? 'light' : 'dark');
+        }
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        themeIcon.className = savedTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+
+        // Submit Logic
+        async function handleSubmit() {
+            attachedImageBase64 = null;
+            let question = "";
+            let fileContext = "";
+            let activeOutput = selectedOutput;
+            let aiName = "Professor Clarity";
+            let aiPersona = "You are Professor Clarity, the lead academic scholar at ClarityTutor. You are an expert at simplifying complex information into bite-sized, understandable knowledge for students.";
+
+            if (currentMode === 'text') {
+                question = questionInput.value.trim();
+                if (!question) {
+                    showToast('Please enter a question', 'error');
+                    return;
+                }
+            } else if (currentMode === 'file') {
+                if (!attachedFile) {
+                    showToast('Please upload a file first', 'error');
+                    return;
+                }
+                aiName = "Data Analyst AI";
+                aiPersona = "You are the Data Analyst AI at ClarityTutor. Your expertise is in parsing, analyzing, and explaining documents and images with high precision. If text content is provided, analyze it. If an image is provided, describe it.";
+
+                attachedImageBase64 = null;
+                if (attachedFile.type === 'text/plain') {
+                    fileContext = await attachedFile.text();
+                } else if (attachedFile.type === 'application/pdf') {
+                    try {
+                        responseContent.innerHTML = `<div class="loading" style="text-align:center; padding:40px;"><i class="fas fa-spinner fa-spin"></i> Reading PDF content...</div>`;
+                        responseSection.classList.add('active');
+                        fileContext = await extractTextFromPDF(attachedFile);
+                    } catch (e) {
+                        console.error("PDF Extraction error:", e);
+                        fileContext = `[The user uploaded a PDF: ${attachedFile.name}. Content extraction failed.]`;
+                    }
+                } else if (attachedFile.type.startsWith('image/')) {
+                    attachedImageBase64 = await fileToBase64(attachedFile);
+                    fileContext = "[Image content attached]";
+                } else {
+                    fileContext = `[The user uploaded ${attachedFile.name}. Platform will analyze based on file metadata.]`;
+                }
+                question = questionInput.value.trim() || `Summarize and explain this file: ${attachedFile.name}`;
+            } else if (currentMode === 'creative') {
+                question = document.getElementById('creativeInput').value.trim();
+                activeOutput = selectedCreativeTool;
+
+                if (activeOutput === 'counseling') {
+                    aiName = "Aira (Career Strategist)";
+                    aiPersona = "You are Aira, a senior career consultant. You provide professional, strategic, and practical advice on career growth, skills, and market trends.";
+                } else if (activeOutput === 'news') {
+                    aiName = "Nova (Global Reporter)";
+                    aiPersona = "You are Nova, an investigative journalist and news anchor. You summarize global events clearly, providing context and why they matter to the world.";
+                } else if (activeOutput === 'debate') {
+                    aiName = "Socrates AI (Debate Master)";
+                    aiPersona = "You are Socrates AI, a master of logic and rhetoric. Your goal is to debate the user by taking the opposing view. Be intellectual, challenging, and strictly logical.";
+                } else if (activeOutput === 'brainstorm') {
+                    aiName = "Ida (Creative Catalyst)";
+                    aiPersona = "You are Ida, the Brainstormer 3000. You use advanced creative frameworks to generate wild, practical, and truly unique ideas that the user hasn't thought of.";
+                }
+
+                if (activeOutput !== 'news' && !question) {
+                    showToast('Please type something!', 'error');
+                    return;
+                }
+            }
+
+            if (!checkUsageLimit()) return;
+
+            submitBtn.disabled = true;
+            incrementUsage();
+            responseSection.classList.add('active');
+            responseSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            responseContent.innerHTML = `
+                <div class="loading" style="text-align:center; padding:40px;">
+                    <div class="ai-burst" style="margin-bottom: 20px;">
+                        <i class="fas fa-circle-notch fa-spin" style="font-size:2.5rem; color:var(--primary);"></i>
+                    </div>
+                    <p style="font-size:1.1rem; font-weight:500; color:var(--text-secondary);">${aiName} is thinking...</p>
+                    <p style="font-size:0.85rem; color:var(--text-muted); margin-top:8px;">"${aiPersona.split('.')[0]}."</p>
+                </div>
+            `;
+
+            responseBadge.textContent = currentMode === 'creative' ? `${aiName}` : `${selectedLevel.charAt(0).toUpperCase() + selectedLevel.slice(1)} Level`;
+
+            try {
+                lastQuestion = question;
+                let fullPrompt = "";
+                if (currentMode === 'creative') {
+                    fullPrompt = outputPrompts[activeOutput](question, selectedLevel);
+                } else {
+                    fullPrompt = currentMode === 'text'
+                        ? outputPrompts[selectedOutput](question, selectedLevel)
+                        : `File Content: ${fileContext}\n\nTask: Based on this file, ${outputPrompts[selectedOutput]('the content above', selectedLevel)}`;
+                }
+
+                // Pass the persona to the API call
+                const response = await callAPI(fullPrompt, 0, aiPersona, attachedImageBase64);
+                currentResponse = response;
+                renderResponse(response, activeOutput);
+                saveToHistory(question, selectedLevel, activeOutput);
+            } catch (error) {
+                responseContent.innerHTML = `<div style="color:var(--error); text-align:center;">Error: ${error.message}</div>`;
+            }
+            submitBtn.disabled = false;
+        }
+
+        // API Call
+        async function callAPI(prompt, modelIndex = currentModelIndex, persona = "You are an helpful AI tutor. respond in json only when asked.", imageBase64 = null) {
+            const modelList = isProUser ? ALL_PRO_MODELS : FREE_MODELS;
+            const safeIndex = modelIndex % modelList.length;
+            const model = modelList[safeIndex];
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getApiKey()}`,
+                        'HTTP-Referer': window.location.href,
+                        'X-Title': 'ClarityTutor'
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            { role: 'system', content: persona },
+                            {
+                                role: 'user',
+                                content: imageBase64 ? [
+                                    { type: 'text', text: prompt },
+                                    { type: 'image_url', image_url: { url: imageBase64 } }
+                                ] : prompt
+                            }
+                        ],
+                        temperature: 0.7
+                    })
+                });
+
+                if (!response.ok) {
+                    rotateApiKey(); // Switch key on failure
+                    if (modelIndex < modelList.length - 1) {
+                        return callAPI(prompt, modelIndex + 1, persona, imageBase64);
+                    }
+                    throw new Error('API Failed');
+                }
+
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (err) {
+                rotateApiKey();
+                throw err;
+            }
+        }
+
+        // PDF and Image Helpers
+        async function extractTextFromPDF(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let text = "";
+            const maxPages = Math.min(pdf.numPages, 10);
+            for (let i = 1; i <= maxPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                text += content.items.map(item => item.str).join(" ") + "\n";
+            }
+            return text || "[Empty PDF]";
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // Render Functions
+        function renderResponse(content, outputType) {
+            // Strip any leading/trailing triple backticks (AI code blocks)
+            const clean = content.trim()
+                .replace(/^```[a-z]*\s*\n?/gi, '')
+                .replace(/\n?```$/g, '')
+                .trim();
+
+            if (outputType === 'mocktest') renderMockTest(clean);
+            else if (outputType === 'flashcards') renderFlashcards(clean);
+            else if (outputType === 'mindmap') renderMindMap(clean);
+            else if (outputType === 'youtube') renderYouTubeSummary(clean);
+            else renderMarkdown(clean);
+        }
+
+        function renderMarkdown(content) {
+            let html = content
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+            responseContent.innerHTML = html;
+        }
+
+        // Render Mock Test
+        function renderMockTest(content) {
+            try {
+                // Try to extract JSON from the response
+                const jsonMatch = content.match(/\[[\s\S]*\]/);
+                if (!jsonMatch) throw new Error('No JSON found');
+
+                const questions = JSON.parse(jsonMatch[0]);
+
+                let html = '<div class="quiz-container">';
+                questions.forEach((q, i) => {
+                    html += `
+                        <div class="question-card" style="background:var(--bg-surface); padding:20px; border-radius:12px; margin-bottom:20px; border:1px solid var(--border-color);">
+                            <div class="question-number" style="color:var(--primary); font-weight:700; margin-bottom:8px;">Question ${i + 1}</div>
+                            <div class="question-text" style="font-weight:600; margin-bottom:16px;">${q.question}</div>
+                            <div class="options-list" style="display:grid; gap:10px;">
+                                ${q.options.map((opt, j) => `
+                                    <button class="option-btn" onclick="selectOption(this, ${i}, ${j}, ${q.correct})" style="text-align:left; padding:12px; border-radius:8px; border:1px solid var(--border-light); background:rgba(255,255,255,0.02); color:var(--text-secondary); cursor:pointer;">
+                                        ${String.fromCharCode(65 + j)}. ${opt}
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <div class="explanation" style="display: none; margin-top: 12px; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 10px; color: var(--success); font-size: 0.85rem;">
+                                <strong>Answer:</strong> ${q.explanation}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                responseContent.innerHTML = html;
+            } catch (error) {
+                renderMarkdown(content);
+            }
+        }
+
+        window.selectOption = function (btn, questionIdx, selectedIdx, correctIdx) {
+            const card = btn.closest('.question-card');
+            const btns = card.querySelectorAll('.option-btn');
+            btns[correctIdx].style.borderColor = 'var(--success)';
+            btns[correctIdx].style.color = 'var(--success)';
+
+            if (selectedIdx !== correctIdx) {
+                btn.style.borderColor = 'var(--error)';
+                btn.style.color = 'var(--error)';
+            }
+            card.querySelector('.explanation').style.display = 'block';
+        };
+
+        function renderFlashcards(content) {
+            try {
+                let jsonString = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+                const jsonMatch = jsonString.match(/\[[\s\S]*\]/);
+                const cards = JSON.parse(jsonMatch[0]);
+
+                let html = '<div class="flashcards-container">';
+                cards.forEach((card, i) => {
+                    html += `
+                        <div class="flashcard" onclick="this.classList.toggle('flipped')">
+                            <div class="flashcard-inner">
+                                <div class="flashcard-front">
+                                    <div class="flashcard-label">Card ${i + 1}</div>
+                                    <div class="flashcard-question">${card.front || card.question}</div>
+                                </div>
+                                <div class="flashcard-back">
+                                    <div class="flashcard-label">Answer</div>
+                                    <div class="flashcard-answer">${card.back || card.answer}</div>
+                                </div>
+                            </div>
+                        </div>
+                     `;
+                });
+                html += '</div>';
+                responseContent.innerHTML = html;
+            } catch (e) { renderMarkdown(content); }
+        }
+
+        function renderYouTubeSummary(content) {
+            try {
+                // Ensure we get clean JSON
+                let jsonString = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+                const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error('No JSON object found');
+
+                const data = JSON.parse(jsonMatch[0]);
+
+                let html = `
+                    <div class="yt-summary-container">
+                        <h2 class="gradient-text" style="font-size: 1.8rem; margin-bottom: 24px;">${data.title}</h2>
+                        
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: var(--primary); margin-bottom: 12px;"><i class="fas fa-list-check"></i> Key Takeaways</h3>
+                            <ul style="list-style: none; padding-left: 0;">
+                                ${data.key_takeaways.map(item => `
+                                    <li style="margin-bottom: 10px; display: flex; gap: 12px; align-items: flex-start; color: var(--text-secondary);">
+                                        <i class="fas fa-chevron-right" style="color: var(--primary); font-size: 0.8rem; margin-top: 6px;"></i>
+                                        <span>${item}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: var(--primary); margin-bottom: 12px;"><i class="fas fa-file-alt"></i> Detailed Analysis</h3>
+                            ${data.detailed_summary.map(p => `<p style="margin-bottom: 16px; color: var(--text-secondary); line-height: 1.8;">${p}</p>`).join('')}
+                        </div>
+                        
+                        <div style="padding: 24px; background: rgba(139, 92, 246, 0.1); border-radius: 16px; border: 1px solid var(--primary-glow);">
+                            <h3 style="color: var(--primary); margin-bottom: 10px;"><i class="fas fa-lightbulb"></i> Why This Matters</h3>
+                            <p style="color: var(--text-secondary); font-style: italic;">${data.why_this_matters}</p>
+                        </div>
+                    </div>
+                `;
+                responseContent.innerHTML = html;
+            } catch (e) {
+                console.error("summarizer error:", e);
+                renderMarkdown(content);
+            }
+        }
+
+        function renderMindMap(content) {
+            // Basic text fallback for mindmap to avoid complex D3/SVG in this turn
+            renderMarkdown("Mindmap visualization requires complex library. Here is the data: <br>" + content);
+        }
+
+        function copyResponse() {
+            navigator.clipboard.writeText(currentResponse);
+            showToast('Copied!');
+        }
+
+        // Mode Switching
+        let currentMode = 'text';
+        let attachedFile = null;
+
+        window.switchMode = function (mode) {
+            currentMode = mode;
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs[0].classList.toggle('active', mode === 'text');
+            tabs[1].classList.toggle('active', mode === 'file');
+            tabs[2].classList.toggle('active', mode === 'creative');
+
+            document.getElementById('textMode').style.display = mode === 'text' ? 'block' : 'none';
+            document.getElementById('fileMode').style.display = mode === 'file' ? 'block' : 'none';
+            document.getElementById('creativeMode').style.display = mode === 'creative' ? 'block' : 'none';
+
+            // Filter output buttons based on mode
+            const controlGroups = document.querySelectorAll('.magic-controls .control-group');
+            if (mode === 'creative') {
+                controlGroups.forEach(cg => cg.style.display = 'none');
+            } else {
+                controlGroups.forEach(cg => cg.style.display = 'flex');
+                document.querySelectorAll('.output-btn').forEach(btn => {
+                    const btnMode = btn.dataset.mode;
+                    if (!btnMode || btnMode === mode) {
+                        btn.style.display = 'inline-flex';
+                    } else {
+                        btn.style.display = 'none';
+                        if (btn.classList.contains('active')) {
+                            const explainBtn = document.querySelector('[data-output="explain"]');
+                            if (explainBtn) explainBtn.click();
+                        }
+                    }
+                });
+            }
+        }
+
+        // File Logic
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const filePreview = document.getElementById('filePreview');
+
+        fileInput.onchange = (e) => handleFiles(e.target.files);
+
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        };
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            const file = files[0];
+            attachedFile = file;
+
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+
+            // Set icon
+            const icon = document.getElementById('fileIcon');
+            if (file.type.includes('image')) icon.className = 'fas fa-file-image';
+            else if (file.type.includes('pdf')) icon.className = 'fas fa-file-pdf';
+            else icon.className = 'fas fa-file-lines';
+            dropZone.style.display = 'none';
+            filePreview.style.display = 'flex';
+        }
+
+        window.removeFile = function () {
+            attachedFile = null;
+            fileInput.value = '';
+            dropZone.style.display = 'block';
+            filePreview.style.display = 'none';
+        }
+
+        // Global Paste Support
+        document.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file') {
+                    const blob = item.getAsFile();
+                    switchMode('file');
+                    handleFiles([blob]);
+                    showToast('File pasted from clipboard!', 'success');
+                }
+            }
+        });
+
+        // Clear Response
+
+        function saveToHistory(q, l, o) {
+            history.unshift({ q, l, o, date: new Date() });
+            localStorage.setItem('claritytutor_history', JSON.stringify(history));
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = history.slice(0, 5).map(h =>
+                `<div style="padding:10px; border-bottom:1px solid var(--border-light); cursor:pointer;" onclick="questionInput.value='${h.q}'; historySection.style.display='none';">${h.q}</div>`
+            ).join('');
+        }
+
+        function showToast(msg, type = 'success') {
+            const t = document.createElement('div');
+            t.textContent = msg;
+            t.style.cssText = `position:fixed; bottom:20px; right:20px; background:var(--bg-surface-elevated); padding:10px 20px; border-radius:8px; border:1px solid var(--primary); z-index:9999; color:white;`;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        // Usage Logic
+        const DAILY_LIMIT = 50;
+        const DAILY_GOAL = 10;
+
+        function updateUsageUI() {
+            const usage = parseInt(localStorage.getItem('claritytutor_usage') || '0');
+            const percent = (usage / DAILY_LIMIT) * 100;
+            document.getElementById('usageText').textContent = `${usage} / ${DAILY_LIMIT}`;
+            document.getElementById('usageBar').style.width = `${Math.min(percent, 100)}%`;
+
+            // Daily Goal Update
+            const goalPercent = Math.min((usage / DAILY_GOAL) * 100, 100);
+            document.getElementById('goalText').textContent = `${usage} / ${DAILY_GOAL} (${Math.round(goalPercent)}%)`;
+            document.getElementById('goalBar').style.width = `${goalPercent}%`;
+
+            if (percent >= 100) {
+                document.getElementById('usageBar').style.background = 'var(--error)';
+            }
+        }
+
+        function updateStreak() {
+            const today = new Date().toDateString();
+            const streakData = JSON.parse(localStorage.getItem('claritytutor_streak') || '{"count": 0, "lastDate": null}');
+
+            if (streakData.lastDate === today) {
+                // Already counted today
+            } else {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+
+                if (streakData.lastDate === yesterday.toDateString()) {
+                    streakData.count++;
+                } else {
+                    streakData.count = 1;
+                }
+                streakData.lastDate = today;
+                localStorage.setItem('claritytutor_streak', JSON.stringify(streakData));
+            }
+            document.getElementById('streakCount').textContent = streakData.count;
+        }
+
+        function checkUsageLimit() {
+            return true; // Unlimited usage for everyone
+        }
+
+        function incrementUsage() {
+            // increment usage for everyone (tracked locally for streak/goals)
+            const usage = parseInt(localStorage.getItem('claritytutor_usage') || '0');
+            localStorage.setItem('claritytutor_usage', (usage + 1).toString());
+            updateUsageUI();
+            updateStreak();
+        }
+
+        // Initialize UI
+        checkAndResetDailyUsage();
+        updateUsageUI();
+        updateStreak();
+
+        // Assistant Chatbot Logic
+        function toggleChat() {
+            const container = document.getElementById('chatContainer');
+            container.style.display = container.style.display === 'flex' ? 'none' : 'flex';
+            if (container.style.display === 'flex') {
+                document.getElementById('chatInput').focus();
+            }
+        }
+
+        document.getElementById('chatBtn').onclick = toggleChat;
+
+        async function sendChat() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMsg(text, 'user');
+            input.value = '';
+
+            const miraModels = [
+                'google/gemini-2.0-flash-exp:free',
+                'meta-llama/llama-3.3-70b-instruct:free',
+                'qwen/qwen-2.5-coder-32b-instruct:free'
+            ];
+
+            const tryMira = async (index = 0) => {
+                if (index >= miraModels.length) {
+                    addMsg("I'm having a bit of trouble waking up my wisdom circuits right now. Mira needs a quick break—please try again in a minute! ✨", 'ai');
+                    rotateApiKey();
+                    return;
+                }
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getApiKey()}`,
+                            'HTTP-Referer': 'https://claritytutor.ai',
+                            'X-Title': 'ClarityTutor (Mira)'
+                        },
+                        body: JSON.stringify({
+                            model: miraModels[index],
+                            messages: [
+                                { role: 'system', content: 'You are Mira, the helpful Academic Concierge for ClarityTutor. Your primary job is to help users navigate the app and understand academic subjects. You are an expert in everything from File Mode to Exam Strategies. Keep responses brief, friendly, and expert. This is UNLIMITED usage.' },
+                                { role: 'user', content: text }
+                            ]
+                        })
+                    });
+
+                    if (!response.ok) return tryMira(index + 1);
+
+                    const data = await response.json();
+                    if (data.choices && data.choices[0]) {
+                        addMsg(data.choices[0].message.content, 'ai');
+                    } else {
+                        throw new Error('Invalid response');
+                    }
+                } catch (e) {
+                    console.error("Mira attempt error:", e);
+                    return tryMira(index + 1);
+                }
+            };
+
+            tryMira();
+        }
+
+        function addMsg(text, type) {
+            const msg = document.createElement('div');
+            msg.className = `msg ${type}`;
+            msg.textContent = text;
+            const container = document.getElementById('chatMessages');
+            container.appendChild(msg);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        document.getElementById('chatInput').onkeypress = (e) => { if (e.key === 'Enter') sendChat(); };
+
+        // Modal Logic
+        function showLegal() {
+            const div = document.createElement('div');
+            div.className = 'modal-overlay active';
+            div.innerHTML = `
+                <div class="modal-content" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()"><i class="fas fa-times"></i></button>
+                    <h2 class="gradient-text" style="font-size: 2rem; margin-bottom: 24px; text-align: center;">Legal & Policy Framework</h2>
+                    
+                    <div style="text-align: left; line-height: 1.8; color: var(--text-secondary);">
+                        <section style="margin-bottom: 30px;">
+                            <h3 style="color: var(--primary); border-bottom: 1px solid var(--border-light); padding-bottom: 8px; margin-bottom: 16px;">1. Terms of Service (Pro Access)</h3>
+                            <p>By accessing ClarityTutor, you agree to our fair usage policy. Although "Pro" features are provided for free in this version, the following rules apply:</p>
+                            <ul style="margin-top: 10px; padding-left: 20px;">
+                                <li>You may not use automated scripts to spam our AI interfaces.</li>
+                                <li>Exploitation of API vulnerabilities is strictly prohibited.</li>
+                                <li>Account sharing for "Free-Pro" status is permitted but monitored for session stability.</li>
+                            </ul>
+                        </section>
+
+                        <section style="margin-bottom: 30px;">
+                            <h3 style="color: var(--primary); border-bottom: 1px solid var(--border-light); padding-bottom: 8px; margin-bottom: 16px;">2. Privacy & Data Security</h3>
+                            <p>Your intellectual privacy is our priority. We handle data with the following guarantees:</p>
+                            <ul style="margin-top: 10px; padding-left: 20px;">
+                                <li><strong>No Data Sale:</strong> We never sell your study habits or uploaded documents to third parties.</li>
+                                <li><strong>Encryption:</strong> All file uploads (PDFs/Images) are processed over secure channels and deleted after session expiry.</li>
+                                <li><strong>Local Storage:</strong> Your chat history is stored <em>locally</em> on your device, unless you explicitly export it.</li>
+                            </ul>
+                        </section>
+
+                        <section style="margin-bottom: 30px;">
+                            <h3 style="color: var(--primary); border-bottom: 1px solid var(--border-light); padding-bottom: 8px; margin-bottom: 16px;">3. Intellectual Property & No Copyrights</h3>
+                            <p>We believe in the democratization of knowledge. Our policy regarding AI outputs is as follows:</p>
+                            <ul style="margin-top: 10px; padding-left: 20px;">
+                                <li><strong>Output Ownership:</strong> Users retain full rights to the summaries, mind maps, and quiz questions generated by the platform.</li>
+                                <li><strong>No Copyright Claims:</strong> ClarityTutor AI makes no copyright claims over the content synthesized from your inputs.</li>
+                                <li><strong>Attribution:</strong> While not required, attribution to ClarityTutor helps us grow.</li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h3 style="color: var(--primary); border-bottom: 1px solid var(--border-light); padding-bottom: 8px; margin-bottom: 16px;">4. Disclaimer</h3>
+                            <p>AI can occasionally hallucinate. ClarityTutor is an educational aid and should not be the sole source for critical research or professional certifications. Use our insights to supplement your learning, not replace it.</p>
+                        </section>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(div);
+        }
+
+        // Removed pricingBtn logic as all features are now free.
+    </script>
+</body>
+
+</html>
