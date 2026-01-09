@@ -822,6 +822,91 @@
             font-size: 1.2rem;
         }
 
+        /* Focus Mode Styles */
+        body.focus-mode-active .navbar,
+        body.focus-mode-active footer,
+        body.focus-mode-active .info-sections,
+        body.focus-mode-active .hero,
+        body.focus-mode-active #appView>div:not(.response-wrapper):not(#responseSection) {
+            display: none !important;
+        }
+
+        body.focus-mode-active .response-wrapper {
+            margin-top: 20vh;
+            max-width: 1000px;
+        }
+
+        body.focus-mode-active .ambient-bg {
+            opacity: 0.1;
+        }
+
+        /* Mastery Badges */
+        .mastery-badges {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge-chip {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid var(--primary-glow);
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* Mind Map Visualization */
+        #mindmapCanvas {
+            width: 100%;
+            height: 500px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .map-node {
+            position: absolute;
+            padding: 12px 20px;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            z-index: 2;
+            transition: border-color 0.3s;
+            max-width: 200px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .map-node:hover {
+            border-color: var(--primary);
+        }
+
+        .map-node.root {
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .map-line {
+            position: absolute;
+            background: var(--primary-glow);
+            height: 2px;
+            transform-origin: left center;
+            z-index: 1;
+            pointer-events: none;
+        }
+
         /* Updated Usage & Char Counter */
         .char-counter {
             text-align: right;
@@ -1401,6 +1486,7 @@
                 <i class="fas fa-fire streak-flame"></i>
                 <span id="streakCount">0</span>
             </div>
+            <div id="masteryDisplay" class="mastery-badges"></div>
             <button class="nav-btn" id="historyBtn" title="History"><i class="fas fa-clock-rotate-left"></i></button>
             <button class="nav-btn" id="themeToggle" title="Theme"><i class="fas fa-moon" id="themeIcon"></i></button>
         </div>
@@ -1694,6 +1780,12 @@
                             Level</span>
                     </div>
                     <div style="display:flex; gap:10px;">
+                        <button class="nav-btn" onclick="toggleFocusMode()" title="Focus Mode"><i
+                                class="fas fa-expand"></i></button>
+                        <button class="nav-btn" onclick="exportToMarkdown()" title="Export Markdown"><i
+                                class="fas fa-file-code"></i></button>
+                        <button class="nav-btn" onclick="exportToPDF()" title="Export PDF"><i
+                                class="fas fa-file-pdf"></i></button>
                         <button class="nav-btn" onclick="copyResponse()" title="Copy"><i
                                 class="fas fa-copy"></i></button>
                         <button class="nav-btn" onclick="clearResponse()" title="Close"><i
@@ -2379,9 +2471,169 @@
         }
 
         function renderMindMap(content) {
-            // Basic text fallback for mindmap to avoid complex D3/SVG in this turn
-            renderMarkdown("Mindmap visualization requires complex library. Here is the data: <br>" + content);
+            try {
+                let jsonString = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+                const jsonMatch = jsonString.match(/\[[\s\S]*\]/);
+                if (!jsonMatch) throw new Error('No JSON data');
+
+                const data = JSON.parse(jsonMatch[0]);
+                responseContent.innerHTML = '<div id="mindmapCanvas"></div>';
+                const canvas = document.getElementById('mindmapCanvas');
+
+                // Positioning logic (Simple Radial/Tree Layout)
+                const width = canvas.offsetWidth;
+                const height = canvas.offsetHeight;
+                const nodes = {};
+
+                // Group by parent
+                const tree = { id: 'root', children: [] };
+                data.forEach(n => {
+                    nodes[n.id] = { ...n, children: [] };
+                });
+
+                const root = data.find(n => !n.parentId) || data[0];
+
+                // Helper to create nodes and lines
+                const renderNode = (n, x, y, level) => {
+                    const nodeDiv = document.createElement('div');
+                    nodeDiv.className = `map-node ${!n.parentId ? 'root' : ''}`;
+                    nodeDiv.style.left = `${x}px`;
+                    nodeDiv.style.top = `${y}px`;
+                    nodeDiv.innerHTML = `<strong>${n.label}</strong><br><span style="font-size:0.7rem; opacity:0.8">${n.content || ''}</span>`;
+                    canvas.appendChild(nodeDiv);
+
+                    // GSAP Entrance
+                    gsap.from(nodeDiv, { scale: 0, opacity: 0, duration: 0.5, delay: level * 0.2, ease: "back.out(1.7)" });
+
+                    // Find children
+                    const children = data.filter(child => child.parentId === n.id);
+                    const angleStep = (Math.PI * 2) / (children.length || 1);
+                    const radius = 150;
+
+                    children.forEach((child, i) => {
+                        const cx = x + Math.cos(i * angleStep) * radius;
+                        const cy = y + Math.sin(i * angleStep) * radius;
+
+                        // Create Line
+                        const line = document.createElement('div');
+                        line.className = 'map-line';
+                        line.style.left = `${x + 60}px`;
+                        line.style.top = `${y + 20}px`;
+
+                        const dx = cx - x;
+                        const dy = cy - y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+                        line.style.width = `0px`;
+                        line.style.transform = `rotate(${angle}deg)`;
+                        canvas.appendChild(line);
+
+                        // Animate Line Growth
+                        gsap.to(line, { width: `${distance}px`, duration: 0.8, delay: level * 0.2 + 0.3 });
+
+                        renderNode(child, cx, cy, level + 1);
+                    });
+                };
+
+                renderNode(root, width / 2 - 50, height / 2 - 30, 0);
+
+            } catch (e) {
+                console.error("Mindmap error:", e);
+                renderMarkdown(content);
+            }
         }
+
+        // Clarity Export Suite
+        function exportToMarkdown() {
+            const blob = new Blob([currentResponse], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Clarity_Study_${new Date().getTime()}.md`;
+            a.click();
+            showToast('Markdown exported!');
+        }
+
+        function exportToPDF() {
+            const originalContent = document.body.innerHTML;
+            const printContent = document.getElementById('responseSection').innerHTML;
+
+            // Simple approach: Use browser print for "PDF"
+            const win = window.open('', '', 'height=700,width=900');
+            win.document.write('<html><head><title>ClarityTutor Study Export</title>');
+            win.document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">');
+            win.document.write('<style>body{font-family: sans-serif; padding:40px; background:#fff; color:#000;} .nav-btn, .modal-close{display:none;} .gradient-text{color:#8b5cf6;} .flashcard{border:1px solid #ddd; margin:10px; padding:20px;}</style>');
+            win.document.write('</head><body>');
+            win.document.write(printContent);
+            win.document.write('</body></html>');
+            win.document.close();
+            win.print();
+            showToast('Preparing PDF...');
+        }
+
+        // Focus Mode
+        function toggleFocusMode() {
+            document.body.classList.toggle('focus-mode-active');
+            const icon = document.querySelector('[onclick="toggleFocusMode()"] i');
+            if (document.body.classList.contains('focus-mode-active')) {
+                icon.className = 'fas fa-compress';
+                showToast('Focus Mode Enabled');
+            } else {
+                icon.className = 'fas fa-expand';
+                showToast('Focus Mode Disabled');
+            }
+        }
+
+        // Gamified Mastery Logic
+        let mastery = JSON.parse(localStorage.getItem('claritytutor_mastery') || '{}');
+
+        function updateMastery(subject, score) {
+            if (!mastery[subject]) mastery[subject] = 0;
+            mastery[subject] += score;
+            localStorage.setItem('claritytutor_mastery', JSON.stringify(mastery));
+            checkBadges();
+        }
+
+        function checkBadges() {
+            const badgeContainer = document.getElementById('masteryDisplay');
+            badgeContainer.innerHTML = '';
+
+            for (const [sub, points] of Object.entries(mastery)) {
+                if (points >= 5) {
+                    const badge = document.createElement('div');
+                    badge.className = 'badge-chip';
+                    badge.innerHTML = `<i class="fas fa-medal"></i> ${sub} Architect`;
+                    badgeContainer.appendChild(badge);
+                } else if (points >= 2) {
+                    const badge = document.createElement('div');
+                    badge.className = 'badge-chip';
+                    badge.style.color = 'var(--text-secondary)';
+                    badge.innerHTML = `<i class="fas fa-seedling"></i> ${sub} Learner`;
+                    badgeContainer.appendChild(badge);
+                }
+            }
+        }
+
+        // Hook into Quiz success
+        window.selectOption = function (btn, questionIdx, selectedIdx, correctIdx) {
+            const card = btn.closest('.question-card');
+            const btns = card.querySelectorAll('.option-btn');
+            btns[correctIdx].style.borderColor = 'var(--success)';
+            btns[correctIdx].style.color = 'var(--success)';
+
+            if (selectedIdx === correctIdx) {
+                // Award points for mastery
+                updateMastery(lastQuestion.slice(0, 15), 1);
+            } else {
+                btn.style.borderColor = 'var(--error)';
+                btn.style.color = 'var(--error)';
+            }
+            card.querySelector('.explanation').style.display = 'block';
+        };
+
+        // Initialize Mastery on load
+        document.addEventListener('DOMContentLoaded', checkBadges);
 
         function copyResponse() {
             navigator.clipboard.writeText(currentResponse);
