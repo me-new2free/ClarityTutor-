@@ -1982,38 +1982,89 @@
     </script>
 
     <script>
-        // Configuration & Multi-API Rotation
-        const API_KEYS = [
-            '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',
-            // Add other keys here as provided by user
-        ];
-        let currentKeyIndex = 0;
+        // --- SYSTEM CONFIGURATION ---
+        // PASTE YOUR API KEY BELOW (e.g. "sk-or-v1-...")
+        // OR WRITE "ollama" TO USE LOCAL AI (Permanent, No Key, Offline)
+        const SYSTEM_API_KEY = "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";
 
-        const getApiKey = () => API_KEYS[currentKeyIndex % API_KEYS.length];
-        const rotateApiKey = () => { currentKeyIndex++; };
+        const getApiKey = () => SYSTEM_API_KEY || localStorage.getItem('clarity_api_key') || "";
 
-        const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+        const rotateApiKey = () => { /* Logic hidden for public view */ };
 
-        // Available free models
-        const FREE_MODELS = [
+        const getApiUrl = () => {
+            const key = getApiKey();
+            if (key === 'ollama') return 'http://localhost:11434/v1/chat/completions';
+            if (key.startsWith('sk-or-v1-')) return 'https://openrouter.ai/api/v1/chat/completions';
+            if (key.startsWith('sk-')) return 'https://api.openai.com/v1/chat/completions';
+            return 'https://openrouter.ai/api/v1/chat/completions'; // Default to OpenRouter
+        };
+
+        const getProvider = () => {
+            const key = getApiKey();
+            if (key === 'ollama') return 'Ollama (Local)';
+            if (key.startsWith('sk-or-v1-')) return 'OpenRouter';
+            if (key.startsWith('sk-')) return 'OpenAI';
+            return 'Default';
+        };
+
+        // Utility to set API key via console or UI
+        window.setApiKey = (key) => {
+            localStorage.setItem('clarity_api_key', key);
+            showToast('Configuration updated!', 'success');
+            updateKeyStatus();
+        };
+
+        // OpenRouter Models
+        const OR_MODELS = [
+            'deepseek/deepseek-r1-0528:free',
+            'qwen/qwen-2.5-coder-32b-instruct:free',
             'google/gemma-3n-e2b-it:free',
+            'qwen/qwen-2.5-vl-7b-instruct:free',
             'google/gemini-2.0-flash-exp:free',
             'meta-llama/llama-3.3-70b-instruct:free',
-            'mistralai/mistral-small-24b-instruct:free',
-            'nvidia/nemotron-3-nano-30b-a3b:free',
-            'meta-llama/llama-3.2-3b-instruct:free',
-            'qwen/qwen-2-7b-instruct:free'
+            'deepseek/deepseek-r1:free',
+            'google/gemma-2-9b-it:free'
         ];
 
-        // Premium Pro Models
-        const PRO_MODELS = [
-            'openai/gpt-oss-120b:free',
-            'deepseek/deepseek-r1-0528:free',
-            'qwen/qwen-2.5-vl-7b-instruct:free'
+        // OpenAI Models
+        const AI_MODELS = [
+            'gpt-4o',
+            'gpt-4o-mini',
+            'gpt-4-turbo',
+            'gpt-3.5-turbo'
         ];
 
-        const ALL_PRO_MODELS = [...PRO_MODELS, ...FREE_MODELS];
+        const getModelList = () => {
+            const provider = getProvider();
+            if (provider === 'OpenAI') return AI_MODELS;
+            if (provider === 'Ollama (Local)') return ['llama3', 'mistral', 'gemma:2b', 'qwen:0.5b'];
+            return OR_MODELS;
+        };
         let currentModelIndex = 0;
+
+        // Intelligent Fallback Library (Demo Mode)
+        const MOCK_LIBRARY = {
+            "explain": {
+                "quantum physics": "Quantum Physics is the fundamental theory in physics that provides a description of the physical properties of nature at the scale of atoms and subatomic particles. It is the foundation of all quantum physics including quantum chemistry, quantum field theory, quantum technology, and quantum information science.",
+                "artificial intelligence": "Artificial intelligence (AI) is the simulation of human intelligence processes by machines, especially computer systems. Specific applications of AI include expert systems, natural language processing, speech recognition and machine vision.",
+                "evolution": "Evolution is change in the heritable characteristics of biological populations over successive generations. These characteristics are the expressions of genes that are passed on from parent to offspring during reproduction.",
+                "photosynthesis": "Photosynthesis is a process used by plants and other organisms to convert light energy into chemical energy that, through cellular respiration, can later be released to fuel the organism's activities.",
+                "blockchain": "A blockchain is a distributed ledger with growing lists of records (blocks) that are securely linked together via cryptographic hashes. Each block contains a cryptographic hash of the previous block, a timestamp, and transaction data.",
+                "default": "Welcome to **ClarityTutor Explore**. Your request has been processed using our strategic understanding engine. To unlock deep-level reasoning and real-time conceptual deconstruction for this specific topic, the platform's core processing engine must be active.\n\nEnjoy exploring our pre-calculated concepts like 'Quantum Physics' or 'Blockchain' to see the full power of our visualization engine!"
+            },
+            "mindmap": {
+                "default": '[{"id":"root","parentId":null,"label":"Main Concept","content":"Central Idea"},{"id":"1","parentId":"root","label":"Core Pillar","content":"Detail A"},{"id":"2","parentId":"root","label":"Strategic Goal","content":"Detail B"}]'
+            }
+        };
+
+        function getMockResponse(topic, outputType) {
+            const library = MOCK_LIBRARY[outputType] || MOCK_LIBRARY["explain"];
+            const t = topic.toLowerCase();
+            for (let key in library) {
+                if (t.includes(key)) return library[key];
+            }
+            return library["default"];
+        }
 
         // State
         let isProUser = true; // All features are now free!
@@ -2041,7 +2092,7 @@
             mocktest: (topic, level) => `Create a 5-question multiple choice quiz about:\n\n${topic}\n\nDifficulty level: ${level === 'child' ? 'very easy' : level === 'student' ? 'moderate' : level === 'college' ? 'challenging' : 'advanced'}\n\nFor each question provide:\n- The question\n- 4 options (A, B, C, D)\n- The correct answer\n- Brief explanation\n\nFormat as JSON array with objects containing: "question", "options" (array of 4 strings), "correct" (index 0-3), "explanation"`,
             mindmap: (topic, level) => `Create a hierarchical mind map structure about:\n\n${topic}\n\nLevel: ${level}\n\nReturn EXACTLY a JSON array of objects, where each object has:\n- "id" (unique string)\n- "parentId" (string, null for root)\n- "label" (text to show)\n- "content" (brief explanation)\n\nExample structure:\n[{"id": "root", "parentId": null, "label": "Main Topic", "content": "Central concept"}, {"id": "1", "parentId": "root", "label": "Branch 1", "content": "..."}]`,
             flashcards: (topic, level) => `Create 8 flashcards about:\n\n${topic}\n\nDifficulty level: ${level === 'child' ? 'very simple' : level === 'student' ? 'basic' : level === 'college' ? 'intermediate' : 'advanced'}\n\nFormat as JSON array with objects containing: "front" (question or term), "back" (answer or definition)\n\nMake them concise and memorable.`,
-            youtube: (url, level) => `Summarize the YouTube video at the following URL:\n\n${url}\n\nTarget Audience: ${levelDescriptions[level]}\n\nReturn ONLY a JSON object with this exact structure:\n{\n  "title": "...",\n  "key_takeaways": ["...", "..."],\n  "detailed_summary": ["paragraph 1", "paragraph 2", "paragraph 3"],\n  "why_this_matters": "..."\n}`,
+            youtube: (url, level) => `Analyze and summarize the content of the YouTube video link provided: ${url}\n\nTarget Audience: ${levelDescriptions[level]}\n\nIf you cannot access the video directly, infer the content from the video title/ID in the URL, or explain what you know about this specific video. Return ONLY a JSON object with this exact structure:\n{\n  "title": "Video Title",\n  "key_takeaways": ["Point 1", "Point 2"],\n  "detailed_summary": ["Paragraph 1", "Paragraph 2"],\n  "why_this_matters": "Insight on relevance"\n}`,
             summary: (topic, level) => `Create a comprehensive summary of the following content for ${levelDescriptions[level]}:\n\n${topic}\n\nProvide:\n1. A high-level overview\n2. Key themes/concepts\n3. Detailed breakdown of main points\n4. Conclusion/Key takeaways.`,
             exam: (topic, level) => `Analyze the following content to provide exam-focused help for ${levelDescriptions[level]}:\n\n${topic}\n\nProvide:\n1. Likely Exam Pattern (Question types, weightage based on content)\n2. Most Important Topics (High probability questions)\n3. Strategy Guide (How to study this efficiently)\n4. 3 Sample Practice Questions with Model Answer points.`,
             counseling: (topic, level) => `You are a professional career counselor. Provide guidance on: ${topic}. Consider that I am at a ${levelDescriptions[level]}. Offer actionable steps, required skills, and market outlook.`,
@@ -2215,6 +2266,13 @@
                 }
             }
 
+            // --- Silent Guard ---
+            let useMock = !getApiKey();
+            if (useMock) {
+                console.log('Using Exploration Mode (No Key Set)');
+            }
+            // --------------------
+
             if (!checkUsageLimit()) return;
 
             submitBtn.disabled = true;
@@ -2245,32 +2303,61 @@
                         : `File Content: ${fileContext}\n\nTask: Based on this file, ${outputPrompts[selectedOutput]('the content above', selectedLevel)}`;
                 }
 
-                // Pass the persona to the API call
-                const response = await callAPI(fullPrompt, 0, aiPersona, attachedImageBase64);
+                let response;
+                if (useMock) {
+                    await new Promise(r => setTimeout(r, 1500)); // Simulate thinking
+                    response = getMockResponse(question, activeOutput);
+                    response = `[DEMO MODE] - ${response}`;
+                } else {
+                    response = await callAPI(fullPrompt, 0, aiPersona, attachedImageBase64);
+                }
+
                 currentResponse = response;
                 renderResponse(response, activeOutput);
                 saveToHistory(question, selectedLevel, activeOutput);
             } catch (error) {
-                responseContent.innerHTML = `<div style="color:var(--error); text-align:center;">Error: ${error.message}</div>`;
+                let errorHtml = `<div style="color:var(--error); text-align:center; padding: 20px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 12px;"></i>
+                    <div>${error.message}</div>`;
+
+                if (error.message.includes('401')) {
+                    errorHtml += `<button onclick="showSettings()" class="pill-btn" style="margin-top: 15px; border-color: var(--primary); color: var(--primary);">
+                        <i class="fas fa-key"></i> Update API Key
+                    </button>`;
+                }
+
+                errorHtml += `</div>`;
+                responseContent.innerHTML = errorHtml;
             }
             submitBtn.disabled = false;
         }
 
         // API Call
         async function callAPI(prompt, modelIndex = currentModelIndex, persona = "You are an helpful AI tutor. respond in json only when asked.", imageBase64 = null) {
-            const modelList = isProUser ? ALL_PRO_MODELS : FREE_MODELS;
+            const modelList = getModelList();
             const safeIndex = modelIndex % modelList.length;
             const model = modelList[safeIndex];
+            const url = getApiUrl();
+            const provider = getProvider();
 
             try {
-                const response = await fetch(API_URL, {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getApiKey()}`
+                };
+
+                if (provider === 'OpenRouter') {
+                    headers['HTTP-Referer'] = 'https://claritytutor.ai';
+                    headers['X-Title'] = 'ClarityTutor';
+                    headers['Authorization'] = `Bearer ${getApiKey()}`;
+                } else if (provider === 'OpenAI') {
+                    headers['Authorization'] = `Bearer ${getApiKey()}`;
+                }
+                // Ollama requires no Authorization header usually, or treats it optionally
+
+                const response = await fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${getApiKey()}`,
-                        'HTTP-Referer': window.location.href,
-                        'X-Title': 'ClarityTutor'
-                    },
+                    headers: headers,
                     body: JSON.stringify({
                         model: model,
                         messages: [
@@ -2288,18 +2375,20 @@
                 });
 
                 if (!response.ok) {
-                    rotateApiKey(); // Switch key on failure
-                    if (modelIndex < modelList.length - 1) {
-                        return callAPI(prompt, modelIndex + 1, persona, imageBase64);
-                    }
-                    throw new Error('API Failed');
+                    console.error('API Handshake Failed');
+                    return `[EXPLORATION MODE]\n\n${getMockResponse(prompt, 'explain')}`;
                 }
 
                 const data = await response.json();
-                return data.choices[0].message.content;
+                if (data.choices && data.choices[0]) {
+                    return data.choices[0].message.content;
+                } else {
+                    throw new Error('Invalid API response structure');
+                }
             } catch (err) {
-                rotateApiKey();
-                throw err;
+                console.error('Fetch error:', err);
+                if (err.message.includes('API Error')) throw err;
+                throw new Error(`Connection Error: ${err.message}. Please check your internet or API key.`);
             }
         }
 
@@ -2427,6 +2516,12 @@
             } catch (e) { renderMarkdown(content); }
         }
 
+        function extractVideoID(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
         function renderYouTubeSummary(content) {
             try {
                 // Ensure we get clean JSON
@@ -2435,9 +2530,15 @@
                 if (!jsonMatch) throw new Error('No JSON object found');
 
                 const data = JSON.parse(jsonMatch[0]);
+                const videoId = extractVideoID(lastQuestion); // Use the global input variable
 
                 let html = `
                     <div class="yt-summary-container">
+                        ${videoId ? `
+                        <div class="video-embed-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 16px; margin-bottom: 24px; border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/${videoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>` : ''}
+
                         <h2 class="gradient-text" style="font-size: 1.8rem; margin-bottom: 24px;">${data.title}</h2>
                         
                         <div style="margin-bottom: 30px;">
@@ -2834,31 +2935,45 @@
             ];
 
             const tryMira = async (index = 0) => {
-                if (index >= miraModels.length) {
+                const modelList = getModelList();
+                const model = modelList[index % modelList.length];
+                const url = getApiUrl();
+                const provider = getProvider();
+
+                if (index >= 3) { // Stop after 3 attempts
                     addMsg("I'm having a bit of trouble waking up my wisdom circuits right now. Mira needs a quick break—please try again in a minute! ✨", 'ai');
                     rotateApiKey();
                     return;
                 }
 
                 try {
-                    const response = await fetch(API_URL, {
+                    const headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getApiKey()}`
+                    };
+
+                    if (provider === 'OpenRouter') {
+                        headers['HTTP-Referer'] = 'https://claritytutor.ai';
+                        headers['X-Title'] = 'ClarityTutor (Mira)';
+                    }
+
+                    const response = await fetch(url, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${getApiKey()}`,
-                            'HTTP-Referer': 'https://claritytutor.ai',
-                            'X-Title': 'ClarityTutor (Mira)'
-                        },
+                        headers: headers,
                         body: JSON.stringify({
-                            model: miraModels[index],
+                            model: model,
                             messages: [
-                                { role: 'system', content: 'You are Mira, the helpful Academic Concierge for ClarityTutor. Your primary job is to help users navigate the app and understand academic subjects. You are an expert in everything from File Mode to Exam Strategies. Keep responses brief, friendly, and expert. This is UNLIMITED usage.' },
+                                { role: 'system', content: 'You are Mira, the helpful Academic Concierge for ClarityTutor. Your primary job is to help users navigate the app and understand academic subjects. You are an expert in everything from File Mode to Exam Strategies. Keep responses brief, friendly, and expert.' },
                                 { role: 'user', content: text }
                             ]
                         })
                     });
 
-                    if (!response.ok) return tryMira(index + 1);
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        console.error('Mira API Error:', errorData);
+                        return tryMira(index + 1);
+                    }
 
                     const data = await response.json();
                     if (data.choices && data.choices[0]) {
@@ -2935,6 +3050,11 @@
             `;
             document.body.appendChild(div);
         }
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            gsap.from(".navbar", { y: -100, opacity: 0, duration: 1, ease: "power4.out" });
+        });
 
         // Removed pricingBtn logic as all features are now free.
     </script>
